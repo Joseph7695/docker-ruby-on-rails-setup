@@ -1,0 +1,46 @@
+# docker-compose.yml
+version: '3'
+services:
+  postgres:
+    image: postgres
+    ports:
+      - 5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+  web:
+    env_file:
+      - .env.dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bundle exec rails s -p 3000 -b '0.0.0.0'
+    volumes:
+      - .:/myapp
+      - bundler_gems:/usr/local/bundle/
+    ports:
+      - "3000:3000"
+    links:
+      - postgres
+      - redis
+  redis:
+    image: redis
+    ports:
+      - 6379
+    volumes:
+      - redis:/data
+  resque:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bundle exec rake resque:work
+    volumes:
+      - .:/myapp
+      - bundler_gems:/usr/local/bundle/
+    links:
+      - postgres
+      - redis
+
+volumes:
+  postgres: null
+  redis: null
+  bundler_gems: null
